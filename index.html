@@ -22,22 +22,15 @@
 
   /* ── Header ── */
   .header{
-    color:#fff; padding:24px 16px 18px; text-align:center;
+    color:#fff; padding:28px 16px 22px; text-align:center;
     position:relative; overflow:hidden;
-    /* 跑道紅 + 草皮綠 相間條紋背景（亮色調） */
-    background:
-      repeating-linear-gradient(
-        180deg,
-        #e07a5f 0px, #e07a5f 18px,
-        #e8967e 18px, #e8967e 20px,
-        #81c784 20px, #81c784 38px,
-        #a5d6a7 38px, #a5d6a7 40px
-      );
+    background:url('header-bg.jpg') center bottom / cover no-repeat;
+    min-height:160px;
   }
-  /* 淡色遮罩讓文字清晰 */
+  /* 半透明遮罩讓文字清晰可讀 */
   .header::before{
     content:''; position:absolute; inset:0;
-    background:rgba(255,255,255,.25);
+    background:linear-gradient(180deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,.2) 100%);
     z-index:0;
   }
   .header::after{
@@ -49,9 +42,9 @@
     display:flex; align-items:center; justify-content:center; gap:14px;
     position:relative; z-index:2;
   }
-  .logo-row img{height:80px; filter:drop-shadow(0 3px 10px rgba(0,0,0,.35))}
-  .logo-text h1{font-size:28px; font-weight:900; letter-spacing:2px; color:#1a237e; text-shadow:0 1px 3px rgba(255,255,255,.6)}
-  .logo-text .sub{font-size:12.5px; color:#333; opacity:.85; margin-top:3px; letter-spacing:.5px}
+  .logo-row img{height:88px; filter:drop-shadow(0 3px 10px rgba(0,0,0,.2))}
+  .logo-text h1{font-size:30px; font-weight:900; letter-spacing:2px; color:#1a237e; text-shadow:0 1px 4px rgba(255,255,255,.8)}
+  .logo-text .sub{font-size:12.5px; color:#2c3e50; margin-top:3px; letter-spacing:.5px; text-shadow:0 1px 2px rgba(255,255,255,.6)}
 
   /* ── Nav ── */
   .nav-wrap{
