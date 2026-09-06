@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>右昌國小體育班</title>
+<meta name="description" content="右昌國小體育班 — 請假申請、通知公告、課表與比賽資訊">
+<!-- 這頁會即時載入公告內容（可能含師長聯絡方式），不讓搜尋引擎收錄 -->
+<meta name="robots" content="noindex,nofollow">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#eef1f6; --card:#fff; --ink:#0d1b3e; --muted:#7c8598;
+    --brand:#1a237e; --line:#e3e7f0; --accent:#1a73e8;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+    background:var(--bg); color:var(--ink); padding:18px 16px 40px;
+    max-width:680px; margin:0 auto; -webkit-font-smoothing:antialiased;
+  }
+  header{margin-bottom:20px}
+  h1{font-size:21px; letter-spacing:.3px}
+  .sub{color:var(--muted); font-size:13px; margin-top:4px}
+
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:26px}
+  .tile{
+    display:flex; flex-direction:column; gap:6px; background:var(--card);
+    border-radius:14px; padding:16px 14px; text-decoration:none; color:inherit;
+    box-shadow:0 1px 5px rgba(13,27,62,.07); border:1px solid transparent;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .tile:hover{transform:translateY(-2px); box-shadow:0 5px 16px rgba(13,27,62,.13); border-color:#d5dcec}
+  .tile .ico{font-size:25px; line-height:1}
+  .tile .t{font-weight:700; font-size:15.5px; color:var(--brand)}
+  .tile .d{font-size:12px; color:var(--muted)}
+  .tile.wide{grid-column:1 / -1; flex-direction:row; align-items:center; gap:12px}
+  .tile.wide .ico{font-size:22px}
+  .tile.wide .txt{flex:1}
+
+  h2{font-size:15px; margin-bottom:12px; display:flex; align-items:center; gap:8px}
+  h2 .all{margin-left:auto; font-size:12px; font-weight:400; color:var(--accent); text-decoration:none}
+
+  .note{
+    background:var(--card); border-radius:12px; padding:14px;
+    margin-bottom:10px; box-shadow:0 1px 5px rgba(13,27,62,.06);
+  }
+  .note .head{display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap}
+  .tag{font-size:11px; padding:2px 8px; border-radius:9px; background:#e8effc; color:var(--brand); white-space:nowrap}
+  .tag.competition{background:#fdeee9; color:#b8451f}
+  .tag.schedule{background:#e7f6ee; color:#1a6b41}
+  .note .ttl{font-weight:700; font-size:14.5px; flex:1; min-width:0}
+  .note .date{font-size:11px; color:#a8b0c0}
+  .note .body{
+    font-size:13.5px; color:#4a5468; line-height:1.65; margin-top:6px;
+    white-space:pre-wrap; word-break:break-word;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .note.open .body{-webkit-line-clamp:unset; overflow:visible}
+  .note .body a{color:var(--accent)}
+  .more{
+    background:none; border:none; color:var(--accent); font-size:12px;
+    cursor:pointer; padding:6px 0 0; font-family:inherit;
+  }
+  .att{
+    display:inline-block; margin-top:8px; font-size:12.5px; color:var(--brand);
+    background:#f0f3fa; padding:6px 11px; border-radius:7px; text-decoration:none;
+  }
+  .msg{text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; line-height:1.7}
+  .msg a{color:var(--accent)}
+  footer{margin-top:30px; text-align:center; color:#a8b0c0; font-size:11.5px; line-height:1.8}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏫 右昌國小體育班</h1>
+  <div class="sub">請假申請 ・ 通知公告 ・ 課表 ・ 比賽資訊</div>
+</header>
+
+<nav class="grid" id="grid"></nav>
+
+<h2>📌 最新公告 <a class="all" id="allLink" href="#">查看全部 ›</a></h2>
+<div id="notices"><div class="msg">載入中…</div></div>
+
+<footer>
+  右昌國小體育班<br>
+  <span id="foot"></span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  換主機時只要改這一行（例如日後從 Railway 搬到 NAS 或其他主機）
+//  結尾不要加斜線
+// ─────────────────────────────────────────────────────────────
+const API_BASE = 'https://pe-leave-system-production.up.railway.app';
+// ─────────────────────────────────────────────────────────────
+
+const TILES = [
+  { href: '/',                                 ico: '✏️', t: '申請請假', d: '填寫請假單' },
+  { href: '/status',                           ico: '🔍', t: '查詢請假', d: '查看審核狀態' },
+  { href: '/api/notices/page/notice',          ico: '📣', t: '通知事項', d: '學校公告' },
+  { href: '/api/schedule/page',                ico: '🗓️', t: '課表',     d: '每週課程' },
+  { href: '/api/notices/page/competition',     ico: '🏅', t: '比賽資訊', d: '近期賽程', wide: true },
+];
+
+const CAT = {
+  notice:      { label: '📢 通知事項', cls: 'notice' },
+  schedule:    { label: '📅 課表',     cls: 'schedule' },
+  competition: { label: '🏆 比賽資訊', cls: 'competition' },
+};
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
+  { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+));
+
+// 先跳脫，再把純文字網址轉成可點擊連結（跟後端公開頁的行為一致）
+const rich = (s) => esc(s).replace(
+  /(https?:\/\/[^\s<]+)/g,
+  '<a href="$1" target="_blank" rel="noreferrer">$1</a>'
+);
+
+// 功能入口
+document.getElementById('grid').innerHTML = TILES.map(t => `
+  <a class="tile${t.wide ? ' wide' : ''}" href="${API_BASE}${t.href}">
+    <div class="ico">${t.ico}</div>
+    <div class="txt">
+      <div class="t">${t.t}</div>
+      <div class="d">${t.d}</div>
+    </div>
+  </a>`).join('');
+
+document.getElementById('allLink').href = API_BASE + '/api/notices/page';
+
+// 最新公告
+(async () => {
+  const box = document.getElementById('notices');
+  try {
+    const res = await fetch(`${API_BASE}/api/notices/public?limit=5`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const list = json.data || [];
+
+    if (!list.length) {
+      box.innerHTML = '<div class="msg">目前沒有公告</div>';
+      return;
+    }
+
+    box.innerHTML = list.map((n, i) => {
+      const c = CAT[n.category] || { label: n.category, cls: 'notice' };
+      const att = n.attachmentUrl
+        ? `<a class="att" href="${API_BASE}${n.attachmentUrl}" target="_blank" rel="noreferrer">📎 ${esc(n.attachmentName || '附件')}</a>`
+        : '';
+      return `
+        <article class="note" id="n${i}">
+          <div class="head">
+            <span class="tag ${c.cls}">${c.label}</span>
+            <span class="ttl">${esc(n.title)}</span>
+          </div>
+          <div class="date">${esc((n.created_at || '').slice(0, 16))}</div>
+          <div class="body">${rich(n.content)}</div>
+          <button class="more" data-i="${i}">展開全文 ▾</button>
+          ${att}
+        </article>`;
+    }).join('');
+
+    // 展開/收合
+    box.querySelectorAll('.more').forEach(btn => {
+      const art = document.getElementById('n' + btn.dataset.i);
+      const body = art.querySelector('.body');
+      // 內容不長就不需要展開按鈕
+      if (body.scrollHeight <= body.clientHeight + 2) { btn.remove(); return; }
+      btn.onclick = () => {
+        art.classList.toggle('open');
+        btn.textContent = art.classList.contains('open') ? '收合 ▴' : '展開全文 ▾';
+      };
+    });
+  } catch (err) {
+    box.innerHTML = `<div class="msg">
+      😥 暫時連不上系統，請稍後再試。<br>
+      也可以直接前往 <a href="${API_BASE}/api/notices/page">公告專區</a>。
+    </div>`;
+  }
+})();
+
+document.getElementById('foot').textContent = '系統位置：' + API_BASE.replace(/^https?:\/\//, '');
+</script>
+
+</body>
+</html>
