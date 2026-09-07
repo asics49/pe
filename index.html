@@ -127,8 +127,9 @@
   }
   .att{
     display:inline-flex; align-items:center; gap:6px;
-    margin-top:10px; font-size:13px; color:var(--brand);
+    margin-top:10px; margin-right:8px; font-size:13px; color:var(--brand);
     background:var(--brand-light); padding:7px 13px; border-radius:8px; text-decoration:none;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .att:hover{background:#d5d9f0}
 
@@ -258,9 +259,13 @@ function renderNotices(cat) {
 
   box.innerHTML = list.map((n, i) => {
     const c = CAT_META[n.category] || { label: n.category, cls: 'notice' };
-    const att = n.attachmentUrl
-      ? `<a class="att" href="${API_BASE}${n.attachmentUrl}" target="_blank" rel="noreferrer">📎 ${esc(n.attachmentName || '附件')}</a>`
-      : '';
+    // 附件：新版 API 回傳 attachments 陣列；舊版只有 attachmentUrl/attachmentName，兩者都支援
+    const atts = Array.isArray(n.attachments) && n.attachments.length
+      ? n.attachments
+      : (n.attachmentUrl ? [{ url: n.attachmentUrl, name: n.attachmentName }] : []);
+    const att = atts.map(a =>
+      `<a class="att" href="${API_BASE}${a.url}" target="_blank" rel="noreferrer">📎 ${esc(a.name || '附件')}</a>`
+    ).join('');
     return `
       <article class="notice cat-${n.category}" id="n${i}">
         <div class="head">
