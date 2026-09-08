@@ -136,6 +136,17 @@
   .empty{text-align:center; color:var(--muted); font-size:15px; padding:48px 16px; line-height:1.8}
   .empty a{color:var(--accent)}
 
+  /* ── Pagination ── */
+  .pager{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:24px}
+  .pager button{
+    padding:9px 20px; border-radius:22px; font-size:15px; cursor:pointer;
+    background:var(--card); color:var(--brand); border:1px solid var(--line);
+    font-family:inherit; font-weight:600; transition:all .12s;
+  }
+  .pager button:hover:not(:disabled){background:var(--brand); color:#fff; border-color:var(--brand)}
+  .pager button:disabled{opacity:.35; cursor:default}
+  .pager .info{font-size:14px; color:var(--muted); white-space:nowrap}
+
   /* ── Footer ── */
   footer{
     text-align:center; padding:20px 16px 30px; color:#9ca3af; font-size:11.5px; line-height:1.8;
@@ -188,6 +199,7 @@
     <div class="skeleton"></div>
     <div class="skeleton"></div>
   </div>
+  <div id="pagination" class="pager"></div>
 </main>
 
 <footer></footer>
@@ -236,17 +248,26 @@ document.getElementById('nav').innerHTML = NAV_ITEMS.map(n => {
 
 document.getElementById('allLink').href = API_BASE + '/api/notices/page';
 
-// ── Notices ──
-let allNotices = [];
+// ── Notices（分頁：每頁 10 則，公告會一直累積，不能整頁一次全部撈出來） ──
+const PAGE_SIZE = 10;
+let currentCat = 'all';
+let currentPage = 1;
 
-async function loadNotices() {
+async function loadPage(cat, page) {
+  currentCat = cat;
+  currentPage = page;
   const box = document.getElementById('notices');
+  const pager = document.getElementById('pagination');
+  box.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+  pager.innerHTML = '';
   try {
-    const res = await fetch(`${API_BASE}/api/notices/public?limit=20`);
+    const offset = (page - 1) * PAGE_SIZE;
+    const catParam = cat === 'all' ? '' : `&category=${encodeURIComponent(cat)}`;
+    const res = await fetch(`${API_BASE}/api/notices/public?limit=${PAGE_SIZE}&offset=${offset}${catParam}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
-    allNotices = json.data || [];
-    renderNotices('all');
+    renderNotices(json.data || []);
+    renderPager(json.total || 0, page);
   } catch (err) {
     box.innerHTML = `<div class="empty">
       😥 暫時連不上系統，請稍後再試。<br>
@@ -255,9 +276,23 @@ async function loadNotices() {
   }
 }
 
-function renderNotices(cat) {
+function renderPager(total, page) {
+  const pager = document.getElementById('pagination');
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) { pager.innerHTML = ''; return; }
+  pager.innerHTML = `
+    <button id="pgPrev" ${page <= 1 ? 'disabled' : ''}>‹ 上一頁</button>
+    <span class="info">第 ${page} / ${totalPages} 頁</span>
+    <button id="pgNext" ${page >= totalPages ? 'disabled' : ''}>下一頁 ›</button>
+  `;
+  const prev = document.getElementById('pgPrev');
+  const next = document.getElementById('pgNext');
+  if (prev) prev.onclick = () => { loadPage(currentCat, currentPage - 1); window.scrollTo({ top: document.querySelector('.sec-head').offsetTop - 10, behavior: 'smooth' }); };
+  if (next) next.onclick = () => { loadPage(currentCat, currentPage + 1); window.scrollTo({ top: document.querySelector('.sec-head').offsetTop - 10, behavior: 'smooth' }); };
+}
+
+function renderNotices(list) {
   const box = document.getElementById('notices');
-  const list = cat === 'all' ? allNotices : allNotices.filter(n => n.category === cat);
 
   if (!list.length) {
     box.innerHTML = '<div class="empty">目前沒有公告</div>';
@@ -298,16 +333,16 @@ function renderNotices(cat) {
   });
 }
 
-// ── Tabs ──
+// ── Tabs ──（切換分類要重新從第 1 頁抓，因為分頁是伺服器端算的）
 document.getElementById('tabs').addEventListener('click', e => {
   const btn = e.target.closest('.tab');
   if (!btn) return;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  renderNotices(btn.dataset.cat);
+  loadPage(btn.dataset.cat, 1);
 });
 
-loadNotices();
+loadPage('all', 1);
 
 </script>
 
