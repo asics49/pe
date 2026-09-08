@@ -224,10 +224,14 @@ const rich = s => esc(s).replace(
 );
 
 // ── Nav ──
-// href 可以是相對路徑（自動接上 API_BASE）或完整網址（外部連結，如行事曆用的 Artifact 連結）
+// href 可以是相對路徑（自動接上 API_BASE）或完整網址（外部連結，如行事曆用的 Artifact 連結）。
+// 外部連結一律開新分頁——那些頁面不是我們系統的一部分，沒有「回首頁」可以點，
+// 開新分頁的話使用者關掉分頁就回到 portal，不會卡在外部頁面出不去。
 document.getElementById('nav').innerHTML = NAV_ITEMS.map(n => {
-  const url = /^https?:\/\//.test(n.href) ? n.href : (API_BASE + n.href);
-  return `<a href="${url}"><span class="ico">${n.ico}</span>${n.t}</a>`;
+  const isExternal = /^https?:\/\//.test(n.href);
+  const url = isExternal ? n.href : (API_BASE + n.href);
+  const target = isExternal ? ' target="_blank" rel="noreferrer"' : '';
+  return `<a href="${url}"${target}><span class="ico">${n.ico}</span>${n.t}</a>`;
 }).join('');
 
 document.getElementById('allLink').href = API_BASE + '/api/notices/page';
