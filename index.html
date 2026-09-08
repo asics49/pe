@@ -52,7 +52,7 @@
   }
   .nav{
     display:flex; gap:6px; justify-content:center; flex-wrap:nowrap;
-    max-width:760px; margin:0 auto;
+    max-width:860px; margin:0 auto;
     overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
     padding-bottom:2px; /* 手機版超出寬度時橫向滑動，不換行變兩排 */
   }
@@ -202,6 +202,7 @@ const NAV_ITEMS = [
   { href: '/status',                       ico: '🔍', t: '查詢請假' },
   { href: '/api/notices/page/notice',      ico: '📣', t: '通知事項' },
   { href: '/api/schedule/page',            ico: '🗓️', t: '課表' },
+  { href: 'https://claude.ai/code/artifact/00937daa-d764-4234-8ed6-29ebc6b5768f', ico: '📅', t: '行事曆' },
   { href: '/api/notices/page/competition', ico: '🏅', t: '比賽資訊' },
   { href: '/admin',                        ico: '🔒', t: '管理後台' },
 ];
@@ -223,9 +224,11 @@ const rich = s => esc(s).replace(
 );
 
 // ── Nav ──
-document.getElementById('nav').innerHTML = NAV_ITEMS.map(n =>
-  `<a href="${API_BASE}${n.href}"><span class="ico">${n.ico}</span>${n.t}</a>`
-).join('');
+// href 可以是相對路徑（自動接上 API_BASE）或完整網址（外部連結，如行事曆用的 Artifact 連結）
+document.getElementById('nav').innerHTML = NAV_ITEMS.map(n => {
+  const url = /^https?:\/\//.test(n.href) ? n.href : (API_BASE + n.href);
+  return `<a href="${url}"><span class="ico">${n.ico}</span>${n.t}</a>`;
+}).join('');
 
 document.getElementById('allLink').href = API_BASE + '/api/notices/page';
 
